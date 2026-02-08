@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+
+# Project Data (QUAN TRỌNG: Không commit data)
+data/
+*.csv
+
+# Environment
+.env
+venv/
+.idea/
+
+# Logs (QUAN TRỌNG: Thêm cái này)
+*.log
+ingestion.log
+dev_log/

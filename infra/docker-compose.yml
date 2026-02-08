@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------
+  # 1. DATA SOURCE: PostgreSQL (Banking Core DB)
+  # ----------------------------------------------------------------
+  postgres:
+    image: postgres:alpine
+    container_name: fraud_postgres_source
+    hostname: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=Admin123!@#
+      - POSTGRES_DB=core
+    # Cấu hình quan trọng cho CDC (Debezium) sau này
+    command: >
+      postgres 
+      -c wal_level=logical 
+      -c max_replication_slots=4 
+      -c max_wal_senders=4
+    volumes:
+      # Mount dữ liệu ra ngoài để không mất khi tắt container
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fraud_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d core"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------------
+  # 2. DATA LAKE: MinIO (S3 Compatible Storage)
+  # ----------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: fraud_minio_lake
+    hostname: minio
+    ports:
+      - "9000:9000"  # Port API (Spark sẽ dùng port này)
+      - "9001:9001"  # Port Console (Bạn dùng web để xem file)
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=Admin123
+    # Lệnh khởi chạy server và bật Console UI
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - fraud_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+# ----------------------------------------------------------------
+# DEFINITIONS (Định nghĩa Volume và Network)
+# ----------------------------------------------------------------
+volumes:
+  postgres_data: # Nơi chứa data DB
+  minio_data:    # Nơi chứa file Parquet/Delta Lake
+
+networks:
+  fraud_network:
+    driver: bridge
