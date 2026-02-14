@@ -14,14 +14,12 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=Admin123!@#
       - POSTGRES_DB=core
-    # Cấu hình quan trọng cho CDC (Debezium) sau này
     command: >
       postgres 
       -c wal_level=logical 
       -c max_replication_slots=4 
       -c max_wal_senders=4
     volumes:
-      # Mount dữ liệu ra ngoài để không mất khi tắt container
       - postgres_data:/var/lib/postgresql/data
     networks:
       - fraud_network
@@ -39,12 +37,11 @@ services:
     container_name: fraud_minio_lake
     hostname: minio
     ports:
-      - "9000:9000"  # Port API (Spark sẽ dùng port này)
-      - "9001:9001"  # Port Console (Bạn dùng web để xem file)
+      - "9000:9000"
+      - "9001:9001"
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=Admin123
-    # Lệnh khởi chạy server và bật Console UI
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
@@ -56,12 +53,80 @@ services:
       timeout: 20s
       retries: 3
 
+  # ----------------------------------------------------------------
+  # 3. MESSAGE BROKER: Zookeeper & Kafka
+  # ----------------------------------------------------------------
+  zookeeper:
+    image: quay.io/debezium/zookeeper:2.5
+    container_name: fraud_zookeeper
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+    networks:
+      - fraud_network
+
+  kafka:
+    image: quay.io/debezium/kafka:2.5
+    container_name: fraud_kafka_broker
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+    depends_on:
+      - zookeeper
+    networks:
+      - fraud_network
+
+  # ----------------------------------------------------------------
+  # 4. CDC ENGINE: Kafka Connect
+  # ----------------------------------------------------------------
+  connect:
+    image: quay.io/debezium/connect:2.5
+    container_name: fraud_debezium_connect
+    hostname: connect
+    ports:
+      - "8083:8083"
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - fraud_network
+
+  # ----------------------------------------------------------------
+  # 5. VISUALIZATION: Kafka UI
+  # ----------------------------------------------------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: fraud_kafka_ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=fraud_cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+      - KAFKA_CLUSTERS_0_CONNECTCLUSTERS_0_NAME=debezium-connect
+      - KAFKA_CLUSTERS_0_CONNECTCLUSTERS_0_ADDRESS=http://connect:8083
+    depends_on:
+      - kafka
+      - connect
+    networks:
+      - fraud_network
+
 # ----------------------------------------------------------------
-# DEFINITIONS (Định nghĩa Volume và Network)
+# DEFINITIONS
 # ----------------------------------------------------------------
 volumes:
-  postgres_data: # Nơi chứa data DB
-  minio_data:    # Nơi chứa file Parquet/Delta Lake
+  postgres_data:
+  minio_data:
 
 networks:
   fraud_network:

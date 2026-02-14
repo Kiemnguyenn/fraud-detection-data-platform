@@ -15,3 +15,12 @@ venv/
 *.log
 ingestion.log
 dev_log/
+
+# Docker & Infrastructure (THÊM CÁI NÀY)
+.DS_Store
+**/.DS_Store
+docker-compose.override.yml
+postgres_data/
+minio_data/
+kafka_data/
+zookeeper_data/
