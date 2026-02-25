@@ -3,7 +3,7 @@ import logging
 import os
 from sqlalchemy import text
 from src.config import DATA_RAW_DIR, FILES_CONFIG
-from src.utils import get_db_engine
+from src.db_utils import get_db_engine
 
 # --- SETUP LOGGING ---
 logging.basicConfig(

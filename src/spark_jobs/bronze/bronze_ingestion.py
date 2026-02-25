@@ -4,7 +4,9 @@ from datetime import datetime
 
 # --- SETUP PATH TO IMPORT UTILS ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = os.path.dirname(os.path.dirname(current_dir))
+spark_jobs_dir = os.path.dirname(current_dir)
+src_dir = os.path.dirname(spark_jobs_dir)
+root_dir = os.path.dirname(src_dir)
 sys.path.append(root_dir)
 
 # --- [WINDOWS OS FIX] SET HADOOP HOME MANUALLY ---

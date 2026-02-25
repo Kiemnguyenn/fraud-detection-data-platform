@@ -10,7 +10,7 @@ import logging
 # Add root directory to sys.path to import src.config
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from src.config import DB_URL
-from src.utils import get_db_engine
+from src.db_utils import get_db_engine
 
 # --- LOGGING SETUP ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
