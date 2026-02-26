@@ -1,7 +1,21 @@
 from pyspark.sql import SparkSession
-
+import sys
+import os
 
 def get_spark_session(app_name):
+    # --- FIX LỖI NATIVEIO TRÊN WINDOWS ---
+    os.environ['HADOOP_HOME'] = "C:\\hadoop"
+    os.environ['PATH'] = "C:\\hadoop\\bin;" + os.environ.get('PATH', '')
+
+    # --- FIX LỖI KHOẢNG TRẮNG "PROGRAM FILES" TRONG ĐƯỜNG DẪN PYTHON ---
+    python_path = sys.executable
+    if "Program Files" in python_path:
+        python_path = python_path.replace("Program Files", "Progra~1")
+
+    os.environ['PYSPARK_PYTHON'] = python_path
+    os.environ['PYSPARK_DRIVER_PYTHON'] = python_path
+    # -----------------------------------------------------------------
+
     packages = [
         "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0",
         "org.apache.hadoop:hadoop-aws:3.3.4",
