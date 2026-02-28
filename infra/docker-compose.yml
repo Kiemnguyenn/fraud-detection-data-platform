@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # 1. POSTGRES (Data Source - GIỮ NGUYÊN DATA CŨ)
+  # 1. POSTGRES (Data Source - GIỮ NGUYÊN)
   postgres:
     image: postgres:alpine
     container_name: fraud_postgres_source
@@ -18,13 +18,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - fraud_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d core"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # 2. MINIO (Data Lake)
+  # 2. MINIO (Data Lake - GIỮ NGUYÊN)
   minio:
     image: minio/minio:latest
     container_name: fraud_minio_lake
@@ -41,7 +36,7 @@ services:
     networks:
       - fraud_network
 
-  # 3. KAFKA & ZOOKEEPER (ĐÃ GẮN Ổ CỨNG MỚI)
+  # 3. KAFKA & ZOOKEEPER & DEBEZIUM (GIỮ NGUYÊN)
   zookeeper:
     image: quay.io/debezium/zookeeper:2.5
     container_name: fraud_zookeeper
@@ -100,7 +95,9 @@ services:
     networks:
       - fraud_network
 
-  # 4. CLICKHOUSE (KHO DATA WAREHOUSE MỚI)
+  # =========================================================================
+  # 4. CLICKHOUSE (KHO DATA WAREHOUSE - BẢN ĐÃ FIX LỖI)
+  # =========================================================================
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: fraud_clickhouse
@@ -108,8 +105,14 @@ services:
     ports:
       - "8123:8123"
       - "9009:9000"
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=admin
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+      # Nhúng bùa hộ mệnh vào ClickHouse
+      - ./configs/clickhouse-users.xml:/etc/clickhouse-server/users.d/users.xml:ro
+      - ./configs/clickhouse-config.xml:/etc/clickhouse-server/config.d/config.xml:ro
     ulimits:
       nofile:
         soft: 262144
@@ -117,7 +120,7 @@ services:
     networks:
       - fraud_network
 
-  # 5. METABASE (BI DASHBOARD MỚI)
+  # 5. METABASE (BI DASHBOARD)
   metabase:
     image: metabase/metabase:latest
     container_name: fraud_metabase_bi
@@ -132,7 +135,7 @@ services:
     networks:
       - fraud_network
 
-  # 6. GIÁM SÁT HỆ THỐNG (PROMETHEUS + GRAFANA + CADVISOR)
+  # 6. GIÁM SÁT HỆ THỐNG
   prometheus:
     image: prom/prometheus:latest
     container_name: fraud_prometheus
