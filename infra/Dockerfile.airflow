@@ -1,0 +1,16 @@
+FROM apache/airflow:2.7.1
+USER root
+
+# Cài đặt Java 11 cho Spark và dọn rác ngay lập tức cho nhẹ máy
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openjdk-11-jre-headless \
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+USER airflow
+
+# Cài đặt PySpark, Delta và KHÓA CHẶT version Airflow ở 2.7.1 để chống xung đột
+RUN pip install --no-cache-dir "apache-airflow==2.7.1" pyspark==3.5.0 delta-spark==3.1.0 apache-airflow-providers-apache-spark

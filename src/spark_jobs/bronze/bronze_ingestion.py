@@ -1,5 +1,6 @@
 import sys
 import os
+import platform
 from datetime import datetime
 
 # --- SETUP PATH TO IMPORT UTILS ---
@@ -11,11 +12,11 @@ sys.path.append(root_dir)
 
 # --- [WINDOWS OS FIX] SET HADOOP HOME MANUALLY ---
 # 1. Set HADOOP_HOME environment variable
-os.environ['HADOOP_HOME'] = "C:\\hadoop"
+# os.environ['HADOOP_HOME'] = "C:\\hadoop"
 # 2. Add the 'bin' directory to system PATH so Spark can load the native library
-sys.path.append("C:\\hadoop\\bin")
-if "C:\\hadoop\\bin" not in os.environ['PATH']:
-    os.environ['PATH'] += ";C:\\hadoop\\bin"
+# sys.path.append("C:\\hadoop\\bin")
+# if "C:\\hadoop\\bin" not in os.environ['PATH']:
+#     os.environ['PATH'] += ";C:\\hadoop\\bin"
 
 from pyspark.sql.functions import col, current_timestamp, lit
 from src.utils.spark_utils import get_spark_session
@@ -26,7 +27,7 @@ class BronzeIngestion:
         self.spark = get_spark_session("Bronze Ingestion Job")
 
         # 2. Configure paths
-        self.kafka_bootstrap = "localhost:9092"
+        self.kafka_bootstrap = "kafka:9092" if platform.system() == 'Linux' else "localhost:9092"
         self.minio_path = "s3a://bronze/all_tables/"
         self.checkpoint_path = "s3a://bronze/checkpoints/"
 
@@ -84,7 +85,8 @@ class BronzeIngestion:
                  .option("path", self.minio_path)
                  .option("checkpointLocation", self.checkpoint_path)
                  .partitionBy("source_table")
-                 .trigger(processingTime="5 seconds")
+                 #.trigger(processingTime="5 seconds")
+                 .trigger(availableNow=True)
                  .start())
         return query
 
