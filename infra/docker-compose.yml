@@ -95,9 +95,7 @@ services:
     networks:
       - fraud_network
 
-  # =========================================================================
   # 4. CLICKHOUSE (KHO DATA WAREHOUSE - BẢN ĐÃ FIX LỖI)
-  # =========================================================================
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: fraud_clickhouse
