@@ -54,7 +54,7 @@ The base dataset for this project was sourced from Kaggle https://www.kaggle.com
 ![Executive Dashboard](docs/showcase/05_executive_dashboard.png)
 
 **2. Fraud Deep Dive & Operations**
-![Fraud Deep Dive](docs/showcase/06_fraud_deep_dive.jpg)
+![Fraud Deep Dive](docs/showcase/06_fraud_deep_dive.png)
 
 ## Repository Structure
 ```text
